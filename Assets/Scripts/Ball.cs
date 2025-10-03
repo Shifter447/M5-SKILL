@@ -1,67 +1,39 @@
 ﻿using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody2D), typeof(CircleCollider2D))]
-public class PerfectBounceBall : MonoBehaviour
+public class Ball : MonoBehaviour
 {
-    private Rigidbody2D rb;
-    private Camera cam;
-    private float ballRadius;
-
-    [Header("Instellingen")]
-    public float horizontalSpeed = 5f;   // constante horizontale snelheid
-    public float bounceStrength = 10f;   // hoe sterk hij altijd omhoog stuitert
-
-    private int directionX = 1; // 1 = rechts, -1 = links
-
+    [SerializeField] Vector3 velocity = new Vector3(1, 1, 0);
+    [SerializeField] Vector3 acceleration = new Vector3(0, -1, 0);
+    Vector2 minScreen, maxScreen;
+    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        rb = GetComponent<Rigidbody2D>();
-        cam = Camera.main;
-
-        rb.gravityScale = 1;
-        rb.freezeRotation = true;
-        rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-
-        // Bepaal straal (voor randen)
-        ballRadius = GetComponent<CircleCollider2D>().radius * transform.localScale.x;
-
-        // Kies random start richting
-        directionX = Random.value < 0.5f ? -1 : 1;
-
-        // Start velocity
-        rb.linearVelocity = new Vector2(directionX * horizontalSpeed, 0);
+        minScreen = Camera.main.ScreenToWorldPoint(Vector2.zero);
+        maxScreen = Camera.main.ScreenToWorldPoint(new Vector2(Screen.width, Screen.height));
     }
 
+    // Update is called once per frame
     void Update()
     {
-        KeepInsideCamera();
-    }
+        velocity += acceleration * Time.deltaTime;
+        transform.position += velocity * Time.deltaTime;
 
-    void KeepInsideCamera()
-    {
         Vector3 pos = transform.position;
-
-        float leftBound = cam.ScreenToWorldPoint(new Vector3(0, 0, 0)).x + ballRadius;
-        float rightBound = cam.ScreenToWorldPoint(new Vector3(Screen.width, 0, 0)).x - ballRadius;
-        float bottomBound = cam.ScreenToWorldPoint(new Vector3(0, 0, 0)).y + ballRadius;
-        float topBound = cam.ScreenToWorldPoint(new Vector3(0, Screen.height, 0)).y - ballRadius;
-
-        Vector2 vel = rb.linearVelocity;
-
-        // 🔹 Horizontale bounce
-        if (pos.x <= leftBound && directionX < 0)
-            directionX = 1;
-        if (pos.x >= rightBound && directionX > 0)
-            directionX = -1;
-
-        // 🔹 Verticale bounce (altijd even sterk omhoog)
-        if (pos.y <= bottomBound && vel.y < 0)
-            vel.y = bounceStrength;
-        if (pos.y >= topBound && vel.y > 0)
-            vel.y = -vel.y;
-
-        // Stel velocity opnieuw in → gravity werkt op Y, maar X blijft constant
-        vel.x = directionX * horizontalSpeed;
-        rb.linearVelocity = vel;
+        if (pos.y > maxScreen.y)
+        {
+            velocity.y = -Mathf.Abs(velocity.y);
+        }
+        if (pos.x > maxScreen.x)
+        {
+            velocity.x = -Mathf.Abs(velocity.x);
+        }
+        if (pos.y < minScreen.y)
+        {
+            velocity.y = Mathf.Abs(velocity.y);
+        }
+        if (pos.x < minScreen.x)
+        {
+            velocity.x = Mathf.Abs(velocity.x);
+        }
     }
 }
